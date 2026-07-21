@@ -113,3 +113,14 @@ npm run build        # type-check + produce main.js via esbuild
 `main.js` is a build artifact and is intentionally **not** committed to this
 repository — for community plugin distribution it is built and attached to
 a GitHub release, per Obsidian's submission requirements.
+
+## Who maintains this
+
+Rootr Sync is built and maintained by **Inspirio Inc.**, the team behind
+[Rootr](https://rootr.io). This repository hosts the plugin distribution for
+the Obsidian community directory; issues and pull requests here are handled by
+the same team.
+
+- Product: https://rootr.io
+- Privacy policy: https://rootr.io/en/legal/privacy
+- Contact: info@inspirio.co
