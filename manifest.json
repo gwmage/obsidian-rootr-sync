@@ -1,11 +1,10 @@
 {
   "id": "rootr-sync",
   "name": "Rootr Sync",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "minAppVersion": "1.4.0",
-  "description": "Team collaboration for your vault: share a chosen folder (or tagged notes) into a Rootr cloud workspace, so teammates and Claude or ChatGPT can read and write it. One-way sync — your vault stays local.",
+  "description": "One-way sync: push a chosen vault folder (or tagged notes) to your team's Rootr workspace, without leaving Obsidian or changing how you work locally.",
   "author": "Rootr",
   "authorUrl": "https://rootr.io",
-  "isDesktopOnly": false,
-  "fundingUrl": "https://rootr.io"
+  "isDesktopOnly": false
 }

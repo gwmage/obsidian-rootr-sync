@@ -17,6 +17,9 @@ import {
  */
 
 const DEFAULT_BASE_URL = "https://rootr.io/api/v1";
+/** Where someone without an account goes. `from` marks the funnel — the plugin
+ *  itself sends no telemetry, so the landing page is the only measurable point. */
+const SETUP_URL = "https://rootr.io/obsidian?from=plugin";
 const AUTO_SYNC_DEBOUNCE_MS = 4000;
 
 interface FileSyncRecord {
@@ -517,17 +520,18 @@ class RootrSyncSettingTab extends PluginSettingTab {
 				"and only when you run the push command or (if enabled) save a matching file.",
 		});
 
+		// The two fields below are meaningless without a Rootr account, and until
+		// now this screen gave no way to get one — people installed the plugin and
+		// had nowhere to go. This is that link.
 		new Setting(containerEl)
-			.setName("Rootr base URL")
-			.setDesc("Your Rootr API base URL.")
-			.addText((text) =>
-				text
-					.setPlaceholder(DEFAULT_BASE_URL)
-					.setValue(this.plugin.settings.baseUrl)
-					.onChange(async (value) => {
-						this.plugin.settings.baseUrl = value.trim() || DEFAULT_BASE_URL;
-						await this.plugin.saveSettings();
-					})
+			.setName("Don't have a Rootr workspace yet?")
+			.setDesc(
+				"You need a workspace to push into. Creating one is free for up to 3 people and takes about a minute — the page below also shows where to copy the two values this screen asks for."
+			)
+			.addButton((button) =>
+				button.setButtonText("Create one free").setCta().onClick(() => {
+					window.open(SETUP_URL, "_blank");
+				})
 			);
 
 		new Setting(containerEl)
@@ -555,6 +559,21 @@ class RootrSyncSettingTab extends PluginSettingTab {
 						this.plugin.settings.workspaceId = value.trim();
 						await this.plugin.saveSettings();
 					})
+			);
+
+		// Without this, the first sign that a key or id is wrong is a failed push.
+		new Setting(containerEl)
+			.setName("Check connection")
+			.setDesc("Confirms the key and workspace ID above actually work, before you push anything.")
+			.addButton((button) =>
+				button.setButtonText("Check connection").onClick(async () => {
+					button.setDisabled(true);
+					try {
+						await this.checkConnection();
+					} finally {
+						button.setDisabled(false);
+					}
+				})
 			);
 
 		new Setting(containerEl)
@@ -610,6 +629,73 @@ class RootrSyncSettingTab extends PluginSettingTab {
 		new Setting(containerEl).setName("Status").setHeading();
 		this.statusEl = containerEl.createDiv({ cls: "rootr-sync-status" });
 		this.renderStatus();
+
+		// Nobody needs this on first run — it has a working default. It used to be
+		// the very first field on the screen, which made the plugin read as
+		// developer-only to anyone who had just installed it.
+		new Setting(containerEl).setName("Advanced").setHeading();
+
+		new Setting(containerEl)
+			.setName("Rootr base URL")
+			.setDesc(
+				`Leave this alone unless you run Rootr on your own server. Default: ${DEFAULT_BASE_URL}`
+			)
+			.addText((text) =>
+				text
+					.setPlaceholder(DEFAULT_BASE_URL)
+					.setValue(this.plugin.settings.baseUrl)
+					.onChange(async (value) => {
+						this.plugin.settings.baseUrl = value.trim() || DEFAULT_BASE_URL;
+						await this.plugin.saveSettings();
+					})
+			);
+	}
+
+	/**
+	 * Validates the key/workspace pair by reading the workspace itself, and
+	 * reports back by name so the user can see they picked the right one.
+	 * There is no endpoint that lists workspaces for an API key, so this
+	 * confirms a pair rather than offering a picker.
+	 */
+	private async checkConnection(): Promise<void> {
+		const { baseUrl, apiKey, workspaceId } = this.plugin.settings;
+		if (!apiKey || !workspaceId) {
+			new Notice("Rootr Sync: fill in the API key and workspace ID first.");
+			return;
+		}
+		new Notice("Rootr Sync: checking…");
+		try {
+			const res = await requestUrl({
+				url: `${baseUrl.replace(/\/+$/, "")}/workspaces/${encodeURIComponent(workspaceId)}`,
+				method: "GET",
+				headers: { "x-api-key": apiKey },
+				throw: false,
+			});
+			if (res.status >= 200 && res.status < 300) {
+				const name = (res.json as { name?: string } | null)?.name;
+				new Notice(
+					name
+						? `Rootr Sync: connected to "${name}".`
+						: "Rootr Sync: connected."
+				);
+				return;
+			}
+			if (res.status === 401 || res.status === 403) {
+				new Notice(
+					"Rootr Sync: the API key was rejected for that workspace. Check that the key belongs to this workspace and has document read and write access."
+				);
+				return;
+			}
+			if (res.status === 404) {
+				new Notice("Rootr Sync: no workspace with that ID. Check the workspace ID.");
+				return;
+			}
+			new Notice(`Rootr Sync: connection check failed (HTTP ${res.status}).`);
+		} catch (err) {
+			new Notice(
+				`Rootr Sync: could not reach Rootr — ${err instanceof Error ? err.message : String(err)}`
+			);
+		}
 	}
 
 	refreshStatus() {

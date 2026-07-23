@@ -5,6 +5,32 @@ the folder (or tagged notes) your team needs to collaborate on — or wants to
 feed to Claude/ChatGPT — into your team's [Rootr](https://rootr.io)
 workspace. Everything else in your vault stays local and private, untouched.
 
+## What this plugin does
+
+- **One-directional sync only (v1): vault → Rootr.** Rootr never writes back
+  into your vault. Your local notes are always the source of truth.
+- Preserves your folder structure 1:1 — a file at
+  `Team/Project/notes/idea.md` in your vault becomes
+  `/Team/Project/notes/idea.md` in Rootr.
+- Only touches the folder and/or tag you configure. Every other note in your
+  vault is left completely alone.
+- Writes are conflict-safe. Before each write the plugin re-reads the document
+  from Rootr and compares it against what it left there last time. If someone
+  changed it in Rootr in the meantime, the push is refused and the file is
+  listed as a **conflict** in the status panel — never force-overwritten. The
+  write itself additionally carries an `If-Match` ETag so a simultaneous edit
+  is rejected server-side (HTTP 412) too.
+- The plugin also refuses to overwrite a document that already exists at the
+  target path but was never pushed by this plugin — rename or remove it in
+  Rootr first. That way a first-time push can't silently replace someone
+  else's work.
+
+## What you need
+
+A Rootr account and a workspace you can write to (rootr.io — the free plan is
+enough to try this; paid plans exist for larger teams and storage). This
+plugin is a client for that service; it does nothing on its own.
+
 ## Privacy, up front
 
 - **Only the scope you configure ever leaves your machine.** The plugin sends
@@ -42,43 +68,25 @@ workspace. Everything else in your vault stays local and private, untouched.
   revoke its API key in Rootr under **Settings → Integrations** — once
   revoked, no further reads or writes are possible with that key.
 
-## What this plugin does
-
-- **One-directional sync only (v1): vault → Rootr.** Rootr never writes back
-  into your vault. Your local notes are always the source of truth.
-- Preserves your folder structure 1:1 — a file at
-  `Team/Project/notes/idea.md` in your vault becomes
-  `/Team/Project/notes/idea.md` in Rootr.
-- Only touches the folder and/or tag you configure. Every other note in your
-  vault is left completely alone.
-- Writes are conflict-safe. Before each write the plugin re-reads the document
-  from Rootr and compares it against what it left there last time. If someone
-  changed it in Rootr in the meantime, the push is refused and the file is
-  listed as a **conflict** in the status panel — never force-overwritten. The
-  write itself additionally carries an `If-Match` ETag so a simultaneous edit
-  is rejected server-side (HTTP 412) too.
-- The plugin also refuses to overwrite a document that already exists at the
-  target path but was never pushed by this plugin — rename or remove it in
-  Rootr first. That way a first-time push can't silently replace someone
-  else's work.
-
-## What you need
-
-A Rootr account and a workspace you can write to (rootr.io — the free plan is
-enough to try this; paid plans exist for larger teams and storage). This
-plugin is a client for that service; it does nothing on its own.
-
 ## Setup
+
+No Rootr workspace yet? **https://rootr.io/obsidian** walks through
+creating one and shows where to copy the two values this plugin asks for.
+The settings screen links there too.
 
 1. In Rootr, go to **Settings → Integrations** and create an API key with
    `docs:read` and `docs:write` scopes for the workspace you want to sync
    into.
 2. In Obsidian, open **Settings → Rootr Sync** and fill in:
-   - **Rootr base URL** (defaults to `https://rootr.io/api/v1`)
    - **API key** (the key from step 1)
    - **Workspace ID**
    - **Folder to sync** and/or **Tag to sync** — at least one is required
    - **Auto-sync on save** (optional, off by default)
+   - **Rootr base URL** lives under **Advanced** and only needs changing if
+     you run Rootr on your own server.
+
+   Press **Check connection** to confirm the key and workspace ID work before
+   pushing anything — it reports back the workspace name.
 3. Run the command **"Rootr Sync: Push selected folder now"** (via the command
    palette) to do your first push, or just save a matching file if
    auto-sync is on.
