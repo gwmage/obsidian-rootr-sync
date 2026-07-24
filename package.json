@@ -1,6 +1,6 @@
 {
   "name": "rootr-sync",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Obsidian community plugin: one-way sync of a vault folder/tag to a Rootr workspace.",
   "main": "main.js",
   "scripts": {
@@ -17,7 +17,6 @@
   "license": "MIT",
   "devDependencies": {
     "@types/node": "^20.0.0",
-    "builtin-modules": "^3.3.0",
     "esbuild": "^0.20.0",
     "obsidian": "^1.5.0",
     "typescript": "^5.4.0"
